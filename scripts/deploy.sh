@@ -19,44 +19,57 @@ for var in SSH_URL REPO REMOTE_DIR VENV SERVICE; do
   fi
 done
 
-# ── Fetch tags ───────────────────────────────────────────────────────────────
-echo "Fetching tags from $REPO ..."
-TAGS=()
-while IFS= read -r tag; do
-  TAGS+=("$tag")
-done < <(git ls-remote --tags --refs "$REPO" | awk -F'/' '{print $NF}' | sort -V)
-
-if [[ ${#TAGS[@]} -eq 0 ]]; then
-  echo "ERROR: No tags found in $REPO"
-  exit 1
-fi
-
+# ── Choose deploy mode ───────────────────────────────────────────────────────
+echo "Deploy mode:"
+echo "  1) Latest code (main branch)"
+echo "  2) Specific tag"
 echo ""
-echo "Available tags:"
-for i in "${!TAGS[@]}"; do
-  echo "  $((i+1))) ${TAGS[$i]}"
-done
-echo ""
+read -rp "Select mode [1/2]: " mode
 
-read -rp "Select a tag (number or name): " choice
-
-if [[ "$choice" =~ ^[0-9]+$ ]] && (( choice >= 1 && choice <= ${#TAGS[@]} )); then
-  TAG="${TAGS[$((choice-1))]}"
+if [[ "$mode" == "1" ]]; then
+  TARGET="main"
+  echo ""
+  echo "Deploying latest code from: $TARGET"
 else
-  TAG="$choice"
-fi
+  # ── Fetch tags ───────────────────────────────────────────────────────────
+  echo "Fetching tags from $REPO ..."
+  TAGS=()
+  while IFS= read -r tag; do
+    TAGS+=("$tag")
+  done < <(git ls-remote --tags --refs "$REPO" | awk -F'/' '{print $NF}' | sort -V)
 
-echo ""
-echo "Deploying tag: $TAG"
+  if [[ ${#TAGS[@]} -eq 0 ]]; then
+    echo "ERROR: No tags found in $REPO"
+    exit 1
+  fi
+
+  echo ""
+  echo "Available tags:"
+  for i in "${!TAGS[@]}"; do
+    echo "  $((i+1))) ${TAGS[$i]}"
+  done
+  echo ""
+
+  read -rp "Select a tag (number or name): " choice
+
+  if [[ "$choice" =~ ^[0-9]+$ ]] && (( choice >= 1 && choice <= ${#TAGS[@]} )); then
+    TARGET="${TAGS[$((choice-1))]}"
+  else
+    TARGET="$choice"
+  fi
+
+  echo ""
+  echo "Deploying tag: $TARGET"
+fi
 echo ""
 
 # ── Deploy on remote ────────────────────────────────────────────────────────
-ssh "$SSH_URL" bash -s -- "$REPO" "$REMOTE_DIR" "$TAG" "$VENV" "$SERVICE" << 'REMOTE_SCRIPT'
+ssh "$SSH_URL" bash -s -- "$REPO" "$REMOTE_DIR" "$TARGET" "$VENV" "$SERVICE" << 'REMOTE_SCRIPT'
 set -euo pipefail
 
 REPO="$1"
 REMOTE_DIR="$2"
-TAG="$3"
+TARGET="$3"
 VENV="$4"
 SERVICE="$5"
 
@@ -66,15 +79,16 @@ systemctl --user stop "$SERVICE" 2>/dev/null || true
 if [[ -d "$REMOTE_DIR" ]]; then
   echo "=== Updating existing repo ==="
   cd "$REMOTE_DIR"
-  git fetch --tags
+  git fetch --all
 else
   echo "=== Cloning repo ==="
   git clone "$REPO" "$REMOTE_DIR"
   cd "$REMOTE_DIR"
 fi
 
-echo "=== Checking out $TAG ==="
-git checkout "$TAG"
+echo "=== Checking out $TARGET ==="
+git checkout "$TARGET"
+git pull
 
 echo "=== Installing ==="
 source "$VENV/bin/activate"

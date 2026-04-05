@@ -29,6 +29,7 @@ if [[ ! -d "$BACKUP_DIR/.git" ]]; then
 node_modules/
 whatsapp-auth/
 bridge/
+workspace/nanobot/
 *.log
 .DS_Store
 Thumbs.db
@@ -51,6 +52,7 @@ rsync -avz --delete \
   --exclude='node_modules/' \
   --exclude='whatsapp-auth/' \
   --exclude='bridge/' \
+  --exclude='workspace/nanobot/' \
   --exclude='*.log' \
   --exclude='.DS_Store' \
   --exclude='Thumbs.db' \
