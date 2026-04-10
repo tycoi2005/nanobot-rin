@@ -38,6 +38,8 @@ After=network.target
 
 [Service]
 Type=simple
+Environment="VIRTUAL_ENV=/root/.pyenv/nanobot"
+Environment="PATH=/root/.pyenv/nanobot/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 ExecStart=%h/.local/bin/nanobot gateway
 Restart=always
 RestartSec=10
@@ -50,6 +52,16 @@ WantedBy=default.target
 ```
 
 replace ExecStart with nanobot link
+
+add config:
+
+{
+  "tools": {
+    "exec": {
+      "allowedEnvKeys": ["PATH", "VIRTUAL_ENV"]
+    }
+  }
+}
 
 Enable and start:
 
