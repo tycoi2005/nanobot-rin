@@ -30,6 +30,8 @@ node_modules/
 whatsapp-auth/
 bridge/
 workspace/nanobot/
+workspace/botbies.github.io/
+workspace/botbies-log/
 workspace/projects/
 *.log
 .DS_Store
@@ -54,6 +56,8 @@ rsync -avz --delete \
   --exclude='whatsapp-auth/' \
   --exclude='bridge/' \
   --exclude='workspace/nanobot/' \
+  --exclude='workspace/botbies.github.io/' \
+  --exclude='workspace/botbies-log/' \
   --exclude='workspace/projects/' \
   --exclude='*.log' \
   --exclude='.DS_Store' \
